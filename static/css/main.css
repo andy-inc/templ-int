@@ -1,0 +1,49 @@
+html,
+body{
+    background-color: #383843;
+    color: #ffffff;
+    height: 100%;
+}
+
+/* Wrapper for page content to push down footer */
+#wrap {
+    min-height: 100%;
+    height: auto;
+    /* Negative indent footer by its height */
+    margin: 0 auto -30px;
+    /* Pad bottom by footer height */
+    padding: 0 0 30px;
+}
+
+/* Set the fixed height of the footer here */
+#footer {
+    height: 30px;
+    background-color: #27272f;
+    text-align: center;
+}
+
+.text-muted {
+    margin: 5px 0;
+}
+
+#space{
+    position: absolute;
+    top: 52px;
+    left: 0px;
+    width: 100%;
+}
+
+#rect{
+
+}
+
+#rect td{
+    border: 1px solid #ffffff;
+    text-align: center;
+    vertical-align: middle;
+}
+
+#rect td:hover{
+    background-color: rgba(255, 255, 255, 0.04);
+    cursor: pointer;
+}
