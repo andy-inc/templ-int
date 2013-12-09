@@ -33,22 +33,39 @@ body{
     width: 100%;
 }
 
-#rect{
+#rect-window{
 
 }
 
-#rect td{
+#rect-window td{
     border: 1px solid #929292;
     text-align: center;
     vertical-align: middle;
     font-size: 4em;
 }
 
-#rect td:hover{
+#rect-window.failed td{
+    border: 1px solid #922529;
+}
+
+#rect-window.success td{
+    border: 1px solid #239200;
+}
+
+#rect-window td:hover{
     background-color: rgba(255, 255, 255, 0.04);
     cursor: pointer;
 }
 
-#rect td.failed{
+#rect-window td.failed{
     color: red;
+}
+
+.badge.green{
+    background-color: #239200;
+}
+
+.badge.yellow{
+    background-color: #ffe82d;
+    color: #000000;
 }

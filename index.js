@@ -68,12 +68,12 @@ passport.deserializeUser(function(data, done) {
 
 
 app.all("*", function(req, res, next){
-    if (req.url === "/" ){
-        req.url = "/index.html";
-    }
-    if (req.user == null && req.url !== "/login" && req.url.indexOf("/auth") === -1 && path.extname(req.url) === ""){
+    if (req.user == null && !req.session.allow && req.url !== "/login" && req.url.indexOf("/auth") === -1 && path.extname(req.url) === ""){
         res.redirect("/login");
     } else {
+        if (req.url === "/" ){
+            req.url = "/index.html";
+        }
         next();
     }
 });
@@ -89,18 +89,23 @@ app.get('/auth/google', passport.authenticate('google'));
 app.get('/auth/google/callback',
     passport.authenticate('google', { failureRedirect: '/login', successRedirect: '/' }));
 
+app.get('/auth/simple', function(req, res){
+    req.session.allow = true;
+    res.redirect("/");
+});
 
 app.get("/login", function(req, res, next){
     req.url = "/login.html";
     next();
 });
 app.get('/logout', function(req, res){
+    delete req.session.allow;
     req.logout();
     res.redirect('/login');
 });
 
 app.get('/user', function(req, res){
-    res.send(req.user);
+    res.send(req.user || {displayName: "Гость"});
 });
 
 

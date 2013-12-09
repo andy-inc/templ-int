@@ -6,7 +6,7 @@ module.exports = exports = {
        ip: "0.0.0.0",
        port: 3001,
        cookie: {
-           secret: "feqwfqe41324å9ry814fgub23od"
+           secret: ""
        },
        session: {
            url: "mongodb://localhost/int-template/sessions",
@@ -23,8 +23,8 @@ module.exports = exports = {
             app_secret: ""
         },
         vk: {
-            app_id: "4048000",
-            app_secret: "mLnR4n7iiEfzaLdDku1K"
+            app_id: "",
+            app_secret: ""
         },
         "url": "http://localhost:3001"
     },

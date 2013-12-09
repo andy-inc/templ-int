@@ -4,115 +4,280 @@
 
 $(function(){
 
-    var $rect = $("#rect");
+    var showWindow = function(name){
+        $("#start-window").hide();
+        $("#score-window").hide();
+        $("#rect-window").hide();
+        $("#numbers-open-window").hide();
+        $("#"+name+"-window").show();
+    };
 
-    var allowOpen = false;
-    var numbers = {};
+    var Game = function(rows, cols){
+        this.options = {
+            rows: rows,
+            cols: cols
+        };
+        this.els = {
+            rect: $("#rect-window"),
+            continue: $('[data-type="action"][data-value="continue-game"]')
+        };
+        this.allowOpenNumber = false;
+        this.numbers = {};
+        this.current = 2;
+        this.score = 0;
+        this.steps = 15;
+        this.history = [];
+        this.end = false;
+        this.koef = 1;
 
-    var initRect = function(w,h){
-        $rect.empty();
-        $rect.data("w", w);
-        $rect.data("h", h);
-        for(var y = 0; y < h; y++){
+        if (window.navigator.userAgent.match(/(iPhone|iPad|iPod)/)){
+            this.els.rect.on("touchend", this._onClick.bind(this));
+        } else {
+            this.els.rect.click("td", this._onClick.bind(this));
+        }
+
+        this.els.rect.removeClass("failed").removeClass("success");
+
+
+        this.els.continue.click(function(event){
+            if (this.end) return;
+            event.preventDefault();
+            showWindow("rect");
+            this.start();
+        }.bind(this));
+    };
+
+    Game.prototype._onClick = function(event){
+        if (this.end) return;
+        event.preventDefault();
+        var $el = $(event.target);
+        if ($el.data("x") != null){
+            this.onOpenNumber(parseInt($el.data("x")), parseInt($el.data("y")));
+        }
+    };
+
+    Game.prototype.init = function(){
+        if (this.end) return;
+        //Init rect
+        this.els.rect.empty();
+        for(var y = 0; y < this.options.rows; y++){
             var tr = $("<tr></tr>");
-            for(var x = 0; x < w; x++){
+            for(var x = 0; x < this.options.cols; x++){
 
                 var r = $("<td></td>");
                 r.attr("data-x", x);
                 r.attr("data-y", y);
-                r.attr("width", 100/w + "%");
-                r.attr("height", 100/h + "%");
+                r.attr("width", 100/ this.options.cols + "%");
+                r.attr("height", 100/ this.options.rows + "%");
                 tr.append(r);
             }
-            $rect.append(tr);
+            this.els.rect.append(tr);
         }
     };
 
-    var startPart = function(n, callback){
+    Game.prototype.start = function(){
+        if (this.end) return;
+        this.allowOpenNumber = false;
+        this.numbers = {};
 
-        $rect.find("td").text("").removeClass("failed");
-
-        var w = $rect.data("w"),
-            h = $rect.data("h");
-
+        this.els.rect.find("td").text("").removeClass("failed");
+        this.els.rect.removeClass("failed").removeClass("success");
         var exists = [];
-
-        var numbers = {};
-
-        for(var i = 0; i < n; i++){
-            var rn = getRandomInt(0, w*h - 1);
+        for(var i = 0; i < this.current; i++){
+            var rn = getRandomInt(0, this.options.cols*this.options.rows - 1);
             while (exists.indexOf(rn) !== -1){
-                rn = getRandomInt(0, w*h - 1);
+                rn = getRandomInt(0, this.options.cols*this.options.rows - 1);
             }
             exists.push(rn);
 
             var num = getRandomInt(1, 29);
-            while( num in numbers){
+            while( num in this.numbers){
                 num = getRandomInt(1, 29);
             }
 
-            var x = Math.floor(rn / h),
-                y = rn - (x * w);
-            $rect.find('[data-x="'+x+'"][data-y="'+y+'"]').text(num);
+            var x = Math.floor(rn / this.options.rows),
+                y = rn - (x * this.options.cols);
+            this.els.rect.find('[data-x="'+x+'"][data-y="'+y+'"]').text(num);
 
-            numbers[num] = {x: x,y : y, value: num, open: false};
+            this.numbers[num] = {x: x, y: y, num: num, open: false};
         }
 
         setTimeout(function(){
-            $rect.find("td").text("");
-            callback(numbers);
-        }, 3000);
-    };
+            if (this.end) return;
+            this.els.rect.find("td").text("");
+            this.onHideNumbers();
+        }.bind(this), 3000);
 
-    var newGame = function(){
-        allowOpen = false;
-        initRect(5,5);
-        startPart(4, function(n){
-            numbers = n;
-            allowOpen = true;
-        });
-    };
-
-    var onOpen = function(x, y){
-        if (!allowOpen) return;
-        var num = null;
-        for(var key in numbers){
-            var value = numbers[key];
-            if (value.x === x && value.y === y){
-                num = value;
-                break;
-            }
+        if (this.onScoreChange){
+            this.onScoreChange(this, this.score);
         }
+        if (this.onStepsChange){
+            this.onStepsChange(this, this.steps);
+        }
+        if (this.onCurrentChange){
+            this.onCurrentChange(this, this.current);
+        }
+
+    };
+
+    Game.prototype.onHideNumbers = function(){
+        this.allowOpenNumber = true;
+    };
+
+    Game.prototype.onOpenNumber = function(x, y){
+        if (!this.allowOpenNumber || this.end) return;
+        var num = this._findNumber(x, y);
+        if (num.open) return;
+        if (num !== null && this._findMinForOpen().num != num.num){
+            num = null;
+        }
+        var allOpen = true;
         if (num == null){
-            $rect.find('[data-x="'+x+'"][data-y="'+y+'"]').text("X").addClass("failed");
-            for(var key in numbers){
-                openNum(key);
+            this.els.rect.addClass("failed");
+            this._onLoose({x: x, y: y});
+        } else if (!num.open){
+            num.open = true;
+            this._showNum(num);
+            this.score += 4;
+
+            for(var key in this.numbers) if (this.numbers.hasOwnProperty(key)){
+                if (!this.numbers[key].open){
+                    allOpen = false;
+                    break;
+                }
             }
-            onFailed();
-        } else {
-            openNum(num.value)
+            if (allOpen){
+                this.els.rect.addClass("success");
+                this.koef = this.koef * 1.25;
+                this.score += Math.round(Math.pow(2, this.current)*this.koef);
+            }
+            if (this.onScoreChange){
+                this.onScoreChange(this, this.score);
+            }
+        }
+        if (allOpen || num == null){
+            this.allowOpenNumber = false;
+            this.steps--;
+            if (num == null){
+                this.current--;
+                if (this.current < 2){
+                    this.current = 2;
+                }
+            } else {
+                this.current++;
+            }
+            if (this.onCurrentChange){
+                this.onCurrentChange(this, this.current);
+            }
+            if (this.onStepsChange){
+                this.onStepsChange(this, this.steps);
+            }
+            if (this.steps === 0){
+                this.end = true;
+                if (this.onEnd){
+                    this.onEnd(this, this.score);
+                }
+            } else {
+                setTimeout(function(){
+                    if (this.end) return;
+                    showWindow("numbers-open");
+                }.bind(this), 1000);
+            }
         }
     };
 
-    var openNum = function(key){
-        numbers[key].open = true;
-        $rect.find('[data-x="'+numbers[key].x+'"][data-y="'+numbers[key].y+'"]').text(numbers[key].value).removeClass("failed");
+    Game.prototype._onLoose = function(point){
+        this.koef = this.koef * 0.5;
+        if (this.koef < 1){
+            this.koef = 1;
+        }
+        this.allowOpenNumber = false;
+        for(var key in this.numbers) if (this.numbers.hasOwnProperty(key)){
+            this._showNum(this.numbers[key]);
+        }
+        this._showLoose(point);
     };
 
-    var onFailed = function(){
-        alert("Game Over!");
+    Game.prototype._showLoose = function(point){
+        var num = this._findNumber(point.x, point.y) || {};
+        var text = num.num || "X";
+        this.els.rect.find('[data-x="'+point.x+'"][data-y="'+point.y+'"]').text(text).addClass("failed");
     };
 
-    $rect.click("td", function(event){
-        event.preventDefault();
-        var $el = $(event.target);
-        onOpen(parseInt($el.data("x")), parseInt($el.data("y")));
-    });
+    Game.prototype._showNum = function(num){
+        this.els.rect.find('[data-x="'+num.x+'"][data-y="'+num.y+'"]').text(num.num).removeClass("failed");
+    };
+
+    Game.prototype._findMinForOpen = function(x, y){
+        var result = null;
+        for(var key in this.numbers) if (this.numbers.hasOwnProperty(key)){
+            var value = this.numbers[key];
+           if (!value.open && (result == null || result.num > value.num)){
+               result = value;
+           }
+        }
+        return result;
+    };
+
+    Game.prototype._findNumber = function(x, y){
+        for(var key in this.numbers) if (this.numbers.hasOwnProperty(key)){
+            var value = this.numbers[key];
+            if (value.x === x && value.y === y && !value.open){
+                return value;
+            }
+        }
+        return null;
+    };
+
+    showWindow("start");
+
+    var game = null;
+    var newGame = function(){
+        if (game != null){
+            game.end = true;
+        }
+        showWindow("start");
+        game = new Game(5, 5);
+        game.init();
+
+        game.onScoreChange = function(game, score){
+            $('[data-type="game-score"]').text(score);
+        };
+
+        game.onStepsChange = function(game, steps){
+            $('[data-type="game-steps"]').text(steps);
+        };
+
+        game.onEnd = function(game, score){
+            game.onScoreChange(game, score);
+            game.onStepsChange(game, game.steps);
+            game.onCurrentChange(game, game.current);
+            setTimeout(function(){
+                showWindow("score");
+            }, 1000);
+        };
+
+        game.onCurrentChange = function(game, current){
+            $('[data-type="game-current"]').text(current);
+        };
+
+        game.onScoreChange(game, game.score);
+        game.onStepsChange(game, game.steps);
+        game.onCurrentChange(game, game.current);
+    };
 
     $('[ data-type="action"][data-value="new-game"]').click(function(event){
         event.preventDefault();
         newGame();
     });
+
+    $('[data-type="action"][data-value="start-game"]').click(function(event){
+        event.preventDefault();
+        showWindow("rect");
+        game.start();
+    });
+
+
 
     newGame();
 });

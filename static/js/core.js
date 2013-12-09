@@ -5,6 +5,7 @@ $(function(){
     $.getJSON("/user", function(data){
         $('[data-type="user-display-name"]').text(data.displayName);
     }).fail(function() {
+        window.location = "/login";
         console.log( "Can not get current user name" );
     });
 
@@ -14,11 +15,11 @@ $(function(){
         var w = $space.width(),
             h = $space.height();
         if (w > h){
-            $('#rect').width(h).height(h).css("margin-left", (w-h) / 2).css("margin-top", 0);
+            $('#rect-window').width(h).height(h).css("margin-left", (w-h) / 2).css("margin-top", 0);
         } else if (h > w) {
-            $('#rect').width(w).height(w).css("margin-top", (h-w) / 2).css("margin-left", 0);
+            $('#rect-window').width(w).height(w).css("margin-top", (h-w) / 2).css("margin-left", 0);
         } else {
-            $('#rect').width(w).height(h).css("margin-top", 0).css("margin-left", 0);
+            $('#rect-window').width(w).height(h).css("margin-top", 0).css("margin-left", 0);
         }
 
     };
