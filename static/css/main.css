@@ -69,3 +69,7 @@ body{
     background-color: #ffe82d;
     color: #000000;
 }
+
+a, input, button, #rect-window td {
+    -ms-touch-action: none !important;
+}

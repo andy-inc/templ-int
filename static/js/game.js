@@ -30,11 +30,7 @@ $(function(){
         this.end = false;
         this.koef = 1;
 
-        if (window.navigator.userAgent.match(/(iPhone|iPad|iPod)/)){
-            this.els.rect.on("touchend", this._onClick.bind(this));
-        } else {
-            this.els.rect.click("td", this._onClick.bind(this));
-        }
+        this.els.rect.click("td", this._onClick.bind(this));
 
         this.els.rect.removeClass("failed").removeClass("success");
 
