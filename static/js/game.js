@@ -127,7 +127,7 @@ $(function(){
     Game.prototype.onOpenNumber = function(x, y){
         if (!this.allowOpenNumber || this.end) return;
         var num = this._findNumber(x, y);
-        if (num.open) return;
+        if (num != null && num.open) return;
         if (num !== null && this._findMinForOpen().num != num.num){
             num = null;
         }
