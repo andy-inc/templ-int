@@ -2,7 +2,6 @@
  * Created by andy <andy.sumskoy@gmail.com> on 09/12/13.
  */
 $(function(){
-    FastClick.attach(document.body);
 
     $.getJSON("/user", function(data){
         $('[data-type="user-display-name"]').text(data.displayName);
